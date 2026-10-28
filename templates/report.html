@@ -103,6 +103,7 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
 .fail { color: var(--critical); font-weight: 600; }
 .scroll { overflow-x: auto; }
 code { font-size: 13px; }
+a { color: var(--series-1); }
 </style>
 </head>
 <body>
@@ -164,6 +165,10 @@ code { font-size: 13px; }
       0.5 ms in Step 0B, none elsewhere.</li>
     <li><b>Fibers</b>: quadrature degree 5, with one fiber frame per element at its centroid, where
       the cohort interpolates the fibers to every quadrature point.</li>
+    <li><b>Data</b>: the cohort's curves are from the benchmark dataset of Aróstica et al. (2025),
+      <a href="https://doi.org/10.5281/zenodo.14260459">doi:10.5281/zenodo.14260459</a>, under
+      CC BY 4.0. Benchmark definition: <a href="https://doi.org/10.1016/j.cma.2024.117485">doi:10.1016/j.cma.2024.117485</a>.
+      Code: <a href="https://github.com/tobias-gerach/arostica-benchmark-cm">arostica-benchmark-cm</a>.</li>
   </ul>
   <div class="tooltip" id="tip" role="status"></div>
 </main>

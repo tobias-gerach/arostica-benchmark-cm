@@ -1,10 +1,11 @@
 # arostica-benchmark-cm
 
-Verification of the dynamic solver of [CardioMechanics](https://github.com/KIT-IBT/CardioMechanics)
+Verification of the dynamic solver of [CardioMechanics](https://github.com/tobias-gerach/CardioMechanics/tree/experimental)
 on the cardiac elastodynamics benchmark of Aróstica et al. (2025),
 [doi:10.1016/j.cma.2024.117485](https://doi.org/10.1016/j.cma.2024.117485): the displacement at
 probe points over one heart beat, scored by RED, eq. (21), against the cohort of codes that took part.
-Every run uses CardioMechanics' quadratic tetrahedron, T10.
+Every run uses CardioMechanics' quadratic tetrahedron, T10. The commits the CSVs record are on the
+`experimental` branch of that fork.
 
 The report of the final runs is published on GitHub Pages from `docs/index.html`: the repository's
 Pages source is the `main` branch, folder `/docs`. `html_report.py` rebuilds it from the benchmark
@@ -25,7 +26,7 @@ data, which CI does not have, so the built file is committed.
 
 ## Usage
 
-`DATA` is the benchmark data repository, `BIN` the directory of the CardioMechanics binaries.
+`DATA` is the unpacked benchmark dataset, `BIN` the directory of the CardioMechanics binaries.
 
 ```sh
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -116,3 +117,13 @@ The branch and commit of a run are those of the git checkout holding `BIN`.
   meshes, with RED up to 1.9. SimVascular P1 follows, up to 0.95 at p2, and the six other codes stay
   below 0.42. A pass against the worst code is therefore weak evidence, and the six close codes are
   the more telling comparison.
+
+## Data and license
+
+The benchmark dataset of Aróstica et al. is
+[doi:10.5281/zenodo.14260459](https://doi.org/10.5281/zenodo.14260459), under CC BY 4.0. This
+repository redistributes material derived from it: the monoventricle mesh and fibers in
+`meshes/mono/`, made with the dataset's toolkit (MIT License, copyright (c) 2023 Reidmen Arostica),
+and the cohort's displacement curves embedded in `docs/index.html`.
+
+The code of this repository is under the MIT License, see `LICENSE`.
