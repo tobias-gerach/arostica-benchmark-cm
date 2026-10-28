@@ -1,0 +1,7 @@
+case,dofs,np,rho_inf,quadrature,red_p0,red_p1,cohort_max_red_p0,cohort_max_red_p1,pass,newton,wall_s,branch,commit
+0A,89679,16,0.5,5,0.1892,0.2165,1.4742,1.5450,True,1513,1813,arostica-benchmark,b5cb05e
+0B,89679,16,0.5,5,0.1488,0.1482,0.2875,0.3702,True,2126,2534,arostica-benchmark,b5cb05e
+1,89679,16,0.5,5,0.0431,0.0669,0.1705,0.2262,True,1758,2097,arostica-benchmark,b5cb05e
+A,89679,16,0.5,5,0.0683,0.1213,0.2757,0.3713,True,1899,2255,arostica-benchmark,b5cb05e
+B,89679,16,0.5,5,0.1391,0.0987,0.3603,0.3519,True,1886,2242,arostica-benchmark,b5cb05e
+C,89679,16,0.5,5,0.0426,0.0644,0.1556,0.2111,True,1823,2164,arostica-benchmark,bf32b16

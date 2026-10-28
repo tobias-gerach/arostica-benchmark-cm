@@ -1,0 +1,162 @@
+<settings>Aróstica et al. (2025) biventricle, ${resolution} mesh</settings>
+
+<General>
+    <LogFile>./out/run.log</LogFile>
+</General>
+
+<Mesh>
+    <Type>T10</Type>
+    <Format>Tetgen</Format>
+    <Sorting>PCA</Sorting>
+    <!-- Every code of the cohort integrates the stiffness at degree 4 or more. See templates/mono.xml. -->
+    <QuadratureDegree>${quadrature}</QuadratureDegree>
+
+    <Tetgen>
+        <Unit>1</Unit>
+        <Nodes>${mesh}/biv.node</Nodes>
+        <Elements>${mesh}/biv.ele</Elements>
+        <Surfaces>${mesh}/biv.sur</Surfaces>
+        <Bases>${mesh}/biv.bases</Bases>
+    </Tetgen>
+
+    <Surfaces>
+        <!-- Right and left endocardium -->
+        <Surface_20><Type>T6</Type></Surface_20>
+        <Surface_30><Type>T6</Type></Surface_30>
+        <!-- Base and epicardium, the Robin boundaries -->
+        <Surface_10><Type>CONTACT_ROBIN</Type></Surface_10>
+        <Surface_40><Type>CONTACT_ROBIN</Type></Surface_40>
+    </Surfaces>
+</Mesh>
+
+<!-- Tables 2, 7 and 8 -->
+<Materials>
+    <Mat_30>
+        <Type>Holzapfel</Type>
+        <Density>1000</Density>
+        <KelvinVoigt><Eta>100</Eta></KelvinVoigt>
+        <Holzapfel>
+            <a>${a}</a>
+            <b>8.023</b>
+            <af>${af}</af>
+            <bf>16.026</bf>
+            <as>${as}</as>
+            <bs>11.12</bs>
+            <afs>${afs}</afs>
+            <bfs>11.436</bfs>
+            <kappa>1e6</kappa>
+            <k>100</k>
+        </Holzapfel>
+        <!-- Bestel returns the tension in Pa and refuses a TensionMax above 1. -->
+        <TensionMax>1</TensionMax>
+        <TensionModel>Bestel</TensionModel>
+        <ActiveTensionMeasure>PK2</ActiveTensionMeasure>
+        <Bestel>
+            <Contractility>1.5e5</Contractility>
+            <Steepness>0.005</Steepness>
+            <MinActivationRate>-30</MinActivationRate>
+            <MaxActivationRate>5</MaxActivationRate>
+            <OnsetSystole>0.163</OnsetSystole>
+            <OnsetDiastole>0.5</OnsetDiastole>
+        </Bestel>
+    </Mat_30>
+</Materials>
+
+<Export>
+    <Format>VTK</Format>
+    <Prefix>./out/run</Prefix>
+    <TimeStep>0.01</TimeStep>
+</Export>
+
+<Solver>
+    <Type>GeneralizedAlpha</Type>
+    <GeneralizedAlpha>
+        <!-- The monoventricle's, see templates/mono.xml. -->
+        <RhoInf>${rho_inf}</RhoInf>
+    </GeneralizedAlpha>
+    <Formulation>TotalLagrangian</Formulation>
+
+    <StartTime>0</StartTime>
+    <StopTime>1</StopTime>
+    <!-- The benchmark's 1 ms step, halved only where Newton fails it, as for the monoventricle. -->
+    <TimeStep>1e-3</TimeStep><MinTimeStep>1e-4</MinTimeStep>
+
+    <LinearSolver>
+        <Preset>direct</Preset>
+        <!-- Full Newton. The solver's default reuses the Jacobian of the step start, with which
+             Newton stalls in the monoventricle's rapid filling. The residual history and the
+             converged reasons go to stdout.txt. -->
+        <Options>-mech_snes_lag_jacobian 1 -mech_snes_lag_preconditioner 1 -mech_snes_monitor -mech_snes_converged_reason -mech_ksp_converged_reason</Options>
+    </LinearSolver>
+
+    <Plugins>
+        <RobinBoundary>true</RobinBoundary>
+        <RobinBoundaryGeneral>true</RobinBoundaryGeneral>
+        <ApplyPressureFromFunction>true</ApplyPressureFromFunction>
+    </Plugins>
+</Solver>
+
+<Plugins>
+    <!-- Epicardium, along the reference normal only -->
+    <RobinBoundary>
+        <SurfaceIndex>40</SurfaceIndex>
+        <Alpha>1e8</Alpha>
+        <Beta>5e3</Beta>
+    </RobinBoundary>
+    <!-- Base, in all directions -->
+    <RobinBoundaryGeneral>
+        <SurfaceIndex>10</SurfaceIndex>
+        <Alpha>1e6</Alpha>
+        <Beta>5e3</Beta>
+    </RobinBoundaryGeneral>
+    <!-- Endocardia, Table 9. The face normals point into the cavities, so p enters with the
+         opposite sign, as for the monoventricle. -->
+    <ApplyPressureFromFunction>
+        <Groups>
+            <LeftVentricle>
+                <Surfaces>30</Surfaces>
+                <Intervals>
+                    <Interval_1>
+                        <Type>BestelPressure</Type>
+                        <StartTime>0</StartTime>
+                        <StopTime>1</StopTime>
+                        <Amplitude>-1</Amplitude>
+                        <BestelPressure>
+                            <AlphaMin>-30</AlphaMin>
+                            <AlphaMax>5</AlphaMax>
+                            <AlphaPre>5</AlphaPre>
+                            <AlphaMid>15</AlphaMid>
+                            <SigmaPre>12000</SigmaPre>
+                            <SigmaMid>16000</SigmaMid>
+                            <TSysPre>0.17</TSysPre>
+                            <TDiasPre>0.484</TDiasPre>
+                            <Gamma>0.005</Gamma>
+                        </BestelPressure>
+                    </Interval_1>
+                </Intervals>
+            </LeftVentricle>
+            <RightVentricle>
+                <Surfaces>20</Surfaces>
+                <Intervals>
+                    <Interval_1>
+                        <Type>BestelPressure</Type>
+                        <StartTime>0</StartTime>
+                        <StopTime>1</StopTime>
+                        <Amplitude>-1</Amplitude>
+                        <BestelPressure>
+                            <AlphaMin>-30</AlphaMin>
+                            <AlphaMax>5</AlphaMax>
+                            <AlphaPre>1</AlphaPre>
+                            <AlphaMid>10</AlphaMid>
+                            <SigmaPre>3000</SigmaPre>
+                            <SigmaMid>4000</SigmaMid>
+                            <TSysPre>0.17</TSysPre>
+                            <TDiasPre>0.484</TDiasPre>
+                            <Gamma>0.005</Gamma>
+                        </BestelPressure>
+                    </Interval_1>
+                </Intervals>
+            </RightVentricle>
+        </Groups>
+    </ApplyPressureFromFunction>
+</Plugins>

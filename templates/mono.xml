@@ -1,0 +1,145 @@
+<settings>Aróstica et al. (2025) monoventricle, Step ${step}</settings>
+
+<General>
+    <LogFile>./out/run.log</LogFile>
+</General>
+
+<Mesh>
+    <Type>T10</Type>
+    <Format>Tetgen</Format>
+    <Sorting>PCA</Sorting>
+    <!-- Every code of the cohort integrates the stiffness at degree 4 or more. At degree 2 the apex
+         tip of Step 0B compresses until elements invert. -->
+    <QuadratureDegree>${quadrature}</QuadratureDegree>
+
+    <Tetgen>
+        <Unit>1</Unit>
+        <Nodes>${mesh}/ellipsoid.node</Nodes>
+        <Elements>${mesh}/ellipsoid.ele</Elements>
+        <Surfaces>${mesh}/ellipsoid.sur</Surfaces>
+        <Bases>${mesh}/ellipsoid.bases</Bases>
+    </Tetgen>
+
+    <Surfaces>
+        <!-- Endocardium -->
+        <Surface_1><Type>T6</Type></Surface_1>
+        <!-- Epicardium and base, the Robin boundaries -->
+        <Surface_2><Type>CONTACT_ROBIN</Type></Surface_2>
+        <Surface_3><Type>CONTACT_ROBIN</Type></Surface_3>
+    </Surfaces>
+</Mesh>
+
+<!-- Tables 1 to 3 -->
+<Materials>
+    <Mat_30>
+        <Type>Holzapfel</Type>
+        <Density>1000</Density>
+        <KelvinVoigt><Eta>100</Eta></KelvinVoigt>
+        <Holzapfel>
+            <a>${a}</a>
+            <b>8.023</b>
+            <af>${af}</af>
+            <bf>16.026</bf>
+            <as>${as}</as>
+            <bs>11.12</bs>
+            <afs>${afs}</afs>
+            <bfs>11.436</bfs>
+            <kappa>1e6</kappa>
+            <k>100</k>
+        </Holzapfel>
+        <!-- Bestel returns the tension in Pa and refuses a TensionMax above 1. -->
+        <TensionMax>1</TensionMax>
+        <TensionModel>Bestel</TensionModel>
+        <ActiveTensionMeasure>PK2</ActiveTensionMeasure>
+        <Bestel>
+            <Contractility>${sigma0}</Contractility>
+            <Steepness>0.005</Steepness>
+            <MinActivationRate>-30</MinActivationRate>
+            <MaxActivationRate>5</MaxActivationRate>
+            <OnsetSystole>0.16</OnsetSystole>
+            <OnsetDiastole>0.484</OnsetDiastole>
+        </Bestel>
+    </Mat_30>
+</Materials>
+
+<Export>
+    <Format>VTK</Format>
+    <Prefix>./out/run</Prefix>
+    <TimeStep>0.01</TimeStep>
+</Export>
+
+<Solver>
+    <Type>GeneralizedAlpha</Type>
+    <GeneralizedAlpha>
+        <!-- Table 3 sets 1, which has no numerical damping: the rapid filling around 0.27 s then
+             excites oscillations that grow until elements invert. -->
+        <RhoInf>${rho_inf}</RhoInf>
+    </GeneralizedAlpha>
+    <Formulation>TotalLagrangian</Formulation>
+
+    <StartTime>0</StartTime>
+    <StopTime>1</StopTime>
+    <!-- The benchmark's 1 ms step, halved only where Newton fails it. In Step 0B the filling presses
+         the apex into the epicardial Robin boundary until Newton cannot take the 1 ms step at 0.39 s;
+         four steps of 0.5 ms carry it past. -->
+    <TimeStep>1e-3</TimeStep><MinTimeStep>1e-4</MinTimeStep>
+
+    <LinearSolver>
+        <Preset>direct</Preset>
+        <!-- Full Newton. The solver's default reuses the Jacobian of the step start, with which
+             Newton stalls during the rapid filling. The residual history and the converged reasons
+             go to stdout.txt, so a failed step shows whether Newton diverged, hit its iteration
+             limit or lost the linear solve. -->
+        <Options>-mech_snes_lag_jacobian 1 -mech_snes_lag_preconditioner 1 -mech_snes_monitor -mech_snes_converged_reason -mech_ksp_converged_reason</Options>
+    </LinearSolver>
+
+    <Plugins>
+        <RobinBoundary>true</RobinBoundary>
+        <RobinBoundaryGeneral>true</RobinBoundaryGeneral>
+        <ApplyPressureFromFunction>true</ApplyPressureFromFunction>
+    </Plugins>
+</Solver>
+
+<Plugins>
+    <!-- Epicardium, along the reference normal only -->
+    <RobinBoundary>
+        <SurfaceIndex>2</SurfaceIndex>
+        <Alpha>1e8</Alpha>
+        <Beta>5e3</Beta>
+    </RobinBoundary>
+    <!-- Base, in all directions -->
+    <RobinBoundaryGeneral>
+        <SurfaceIndex>3</SurfaceIndex>
+        <Alpha>1e5</Alpha>
+        <Beta>5e3</Beta>
+    </RobinBoundaryGeneral>
+    <!-- Endocardium, Table 4. The plugin applies the traction p n along the face normal, which
+         points out of the wall into the cavity, while eq. (1) takes N into the wall, so p enters
+         with the opposite sign. See the README. -->
+    <ApplyPressureFromFunction>
+        <Groups>
+            <Endocardium>
+                <Surfaces>1</Surfaces>
+                <Intervals>
+                    <Interval_1>
+                        <Type>BestelPressure</Type>
+                        <StartTime>0</StartTime>
+                        <StopTime>1</StopTime>
+                        <Amplitude>-${pressure}</Amplitude>
+                        <BestelPressure>
+                            <AlphaMin>-30</AlphaMin>
+                            <AlphaMax>5</AlphaMax>
+                            <AlphaPre>5</AlphaPre>
+                            <AlphaMid>1</AlphaMid>
+                            <SigmaPre>7000</SigmaPre>
+                            <SigmaMid>16000</SigmaMid>
+                            <TSysPre>0.17</TSysPre>
+                            <TDiasPre>0.484</TDiasPre>
+                            <Gamma>0.005</Gamma>
+                        </BestelPressure>
+                    </Interval_1>
+                </Intervals>
+            </Endocardium>
+        </Groups>
+    </ApplyPressureFromFunction>
+</Plugins>
